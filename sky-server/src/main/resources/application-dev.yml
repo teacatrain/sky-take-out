@@ -10,3 +10,8 @@ sky:
     endpoint: https://oss-cn-beijing.aliyuncs.com
     bucketName: java-ai-hainan
     region: cn-beijing
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    password:
