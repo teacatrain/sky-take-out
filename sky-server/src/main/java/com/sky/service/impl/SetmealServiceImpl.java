@@ -2,10 +2,15 @@ package com.sky.service.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.sky.constant.MessageConstant;
+import com.sky.constant.StatusConstant;
 import com.sky.dto.SetmealDTO;
 import com.sky.dto.SetmealPageQueryDTO;
+import com.sky.entity.Dish;
 import com.sky.entity.Setmeal;
 import com.sky.entity.SetmealDish;
+import com.sky.exception.DeletionNotAllowedException;
+import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealDishMapper;
 import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
@@ -26,6 +31,8 @@ public class SetmealServiceImpl implements SetmealService {
     private SetmealMapper setmealMapper;
     @Autowired
     private SetmealDishMapper setmealDishMapper;
+    @Autowired
+    private DishMapper dishMapper;
 
     /**
      * 新增套餐
@@ -57,7 +64,15 @@ public class SetmealServiceImpl implements SetmealService {
     }
 
     @Override
+    @Transactional
     public void startOrStop(Integer status, Long id) {
+        List<SetmealDish> setmealDishes = setmealDishMapper.getBySetmealId(id);
+        for (SetmealDish setmealDish : setmealDishes) {
+            Dish dish = dishMapper.getById(setmealDish.getDishId());
+            if(dish.getStatus() == StatusConstant.DISABLE){
+                throw new RuntimeException(MessageConstant.SETMEAL_ENABLE_FAILED);
+            }
+        }
         Setmeal setmeal = Setmeal.builder()
                 .status(status)
                 .id(id)
@@ -89,5 +104,18 @@ public class SetmealServiceImpl implements SetmealService {
         if(setmealDishes != null && !setmealDishes.isEmpty()){
             setmealDishMapper.insertBatch(setmealDishes);
         }
+    }
+
+    @Override
+    public void deleteBatch(List<Long> ids) {
+        for (Long id : ids) {
+            SetmealVO setmealVO = setmealMapper.getById(id);
+            if (setmealVO.getStatus() == StatusConstant.ENABLE) {
+                throw new DeletionNotAllowedException(MessageConstant.SETMEAL_ON_SALE);
+            }
+        }
+        setmealMapper.deleteBatch(ids);
+
+        setmealDishMapper.deleteBySetmealIds(ids);
     }
 }

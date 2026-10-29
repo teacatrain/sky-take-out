@@ -52,7 +52,7 @@
             <if test="name != null and name != ''">
                 and d.name like CONCAT('%', #{name}, '%')
             </if>
-            <if test="status != null and status != ''">
+            <if test="status != null">
                 and d.status = #{status}
             </if>
         </where>
